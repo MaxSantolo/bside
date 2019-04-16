@@ -3,7 +3,12 @@
 
 include 'connect.php';
 require 'class/PHPMailerAutoload.php';
-// mando le email a tutti quelli che stanno scadendo
+require_once  $_SERVER['DOCUMENT_ROOT']."/areaclienti/classes/Log.php";
+require_once  $_SERVER['DOCUMENT_ROOT']."/areaclienti/classes/PickLog.php";
+require_once  $_SERVER['DOCUMENT_ROOT']."/areaclienti/classes/Mail.php";
+
+
+// mando le email a tutti i pacchetti scaduti
 
 $sql_scadenza = "SELECT * FROM acs_pacchetti WHERE cestinato != '1' AND ( data_fine_pacchetto < curdate() OR ( ore_utilizzate >= (ore_totali_pacchetto + delta_ore) AND ore_totali_pacchetto > 0) )";
 $resultscadenza = $conn->query($sql_scadenza); 
@@ -64,8 +69,10 @@ $mail->IsHTML(true);
 $mail->Subject = $oggetto;
 $mail->Body    = $corpodeltesto;
 $mail->AltBody = $corpodeltestotxt;
-$mail->send();
 
+    ($mail->send()) ? $mgs = "Inviata email di contratto scaduto a: " . $destinatario : $msg = "Impossibile inviare la mail di contratto scaduto a: " . $destinatario . ". Errore: " . $mail->ErrorInfo;
+    Log::wLog($msg);
+    $plog->sendLog(array("app"=>"BSIDE","action"=>"NOTIFICA_CONTRATTO_SCADUTO","content"=>$msg));
 }
 
 

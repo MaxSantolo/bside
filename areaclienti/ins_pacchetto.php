@@ -5,6 +5,10 @@ include ("../tech/connect.php");
 include ("../tech/connect_prod.php");
 include ("session.php");
 require ("../tech/class/PHPMailerAutoload.php");
+require_once  $_SERVER['DOCUMENT_ROOT']."/areaclienti/classes/Log.php";
+require_once  $_SERVER['DOCUMENT_ROOT']."/areaclienti/classes/PickLog.php";
+require_once  $_SERVER['DOCUMENT_ROOT']."/areaclienti/classes/Mail.php";
+
 
 ?>
 <head>
@@ -98,6 +102,8 @@ body {
 
 include ('../tech/connection.php');
 
+$plog = new PickLog();
+$logmail = new Mail();
 if (isset($_POST["button"])) {
         
                         if (isset($_GET['nome'])) { $azienda = $_GET['nome']; } else { $azienda = mysqli_real_escape_string($conn, $_POST['azienda']); } //se viene passata l'azienda la uso altrimenti la leggo dal form
@@ -186,7 +192,30 @@ if (isset($_POST["button"])) {
         if ($errori == '') { //inserimento
            
             $conn->query("INSERT INTO acs_pacchetti (azienda, codice, cod_auth, data_inizio_pacchetto, data_fine_pacchetto, tipo, ore_totali_pacchetto, email_notifiche, postazione) VALUES ('".$azienda."', '".$codice."', '".$auth."', '".$dal."', '".$al."', '".$tipo_pacchetto."', '".$pacchetto."', '".$email."', '".$postazione."')");
-            $conn->query("INSERT INTO acs_utenti (nome_azienda, pin, auth, email, tipo, specimen, livello) VALUES ('".$azienda."', '".$codice."', '".$auth."', '".$email."', 'BSIDE', '".$specimen."', 'UTENTE')");
+            
+
+            //controlla inserimento utente ed effettua il log dell'azione
+            $sqlAddUser = "INSERT INTO acs_utenti (nome_azienda, pin, auth, email, tipo, specimen, livello) VALUES ('".$azienda."', '".$codice."', '".$auth."', '".$email."', 'BSIDE', '".$specimen."', 'UTENTE')";
+            $addUserACB = $conn->query($sqlAddUser);
+
+            if ($conn->error) {
+                $errormsg = "Impossibile eseguire la query: " . $sqlAddUser . " durante l'inserimento dell'utente tra gli accessi di Area Clienti BSide";
+                Log::wLog($errormsg,"Errore");
+                $plog->sendLog(array("app"=>"BSIDE","action"=>"CREA_UTENTE_AREACLIENTI","content"=>$errormsg));
+            } else {
+
+                $msg = "Inserito utente in Area Clienti BSide: " . $azienda . " - " . $email . " - " . $codice;
+                Log::wLog($msg);
+                $plog->sendLog(array("app"=>"BSIDE","action"=>"CREA_UTENTE_AREACLIENTI","content"=>$msg));
+
+            }
+
+            
+            
+            
+            
+            
+            
             $conn2->query("INSERT INTO visual_phonebook (company, pin, email, tcm) VALUES ('".$azienda."', '".$auth.$codice."', '".$email."', '".$tcm."' )");
 
             $messaggio .= "<P>Pu&ograve; accedere all'<a href=\"http://bside.pickcenter.com/aceaclienti/\">Area Clienti BSide</a> (raggiungibile dalla rete wifi di PickCenter) con Nome Utente = ". $email . " e Password = ".$codice." per prenotare la miniroom.</P>";
@@ -203,6 +232,17 @@ if (isset($_POST["button"])) {
                 $conn_prod_radius->query("INSERT INTO radreply (username, attribute, op, value) VALUES ('".$email."', 'Acct-Interim-Interval', ':=', '60')");
                 $conn_prod_radius->query("INSERT INTO radreply (username, attribute, op, value) VALUES ('".$email."', 'WISPr-Bandwidth-Max-Up', ':=', '4194304')");
                 $conn_prod_radius->query("INSERT INTO radreply (username, attribute, op, value) VALUES ('".$email."', 'WISPr-Bandwidth-Max-Down', ':=', '4194304')");
+
+                //automazione CHECK_IN_AUTO_WIFI
+                if ($conn_prod_radius->error) {
+                    $msg = "Impossibile aggiungere account Wifi con username: " . $email . ". Errore:" . $conn_prod_radius->error;
+                    $smail = $mail->sendErrorEmail($msg);
+                } else $msg = "Account wifi aggiunto correttamente con username: " . $email;
+
+                Log::wLog($msg);
+                $plog->sendLog(array("app"=>"BSIDE","content"=>$msg,"action"=>"CHECK_IN_AUTO_WIFI"));
+
+
 
                 $conn_prod_radius->close();
 
@@ -224,6 +264,8 @@ if (isset($_POST["button"])) {
                 //creo contratto nel sistema a punti
                 $conn_prod_punti->query("INSERT INTO anagrafica_punti (id_cliente_dom2, data_inizio, data_fine, nome, email, risorse, data_scadenza) VALUES ('B".$codice."','".$dal."','".$al."','".$azienda."','".$email."','[".$tipo_pacchetto."]','".date('Y-m-d', strtotime($al. '+90 days'))."')");
 
+                ($conn_prod_punti->error) ? $msglog = "Impossibile aggiungere il contratto per " . $azienda : $msglog = "Aggiunto il contratto a punti per " . $azienda;
+
                 $messaggio .= "<P>Abbiamo accreditato i punti inclusi nel tuo pacchetto utili a prenotare Day Office e Sale Riunioni sul nostro "
                               ."<a href=\"https://www.pickcenter.it/booking/\" style=\"color: #ff9a00\" target=\"_blank\">sistema di prenotazione online</a><BR><br>Ecco il riepilogo dei punti a tua disposizione:\"</P>";
 
@@ -235,9 +277,15 @@ if (isset($_POST["button"])) {
 
                     $conn_prod_punti->query("INSERT INTO accrediti (id_cliente, data_accredito, punti, accreditato, scadenza) VALUES ('".$trovaid['id']."', '".$datacc."', '5', 'In attesa', '".date('Y-m-d', strtotime($datacc. '+60 days'))."' )");
 
+                    ($conn_prod_punti->error) ? $msglog .= PHP_EOL . "Impossibile generare accredito punti per " . $azienda . " per la data " . date('d-m-Y', $datacc) : $msglog .= PHP_EOL . "Generato accredito punti per " . $azienda . " per la data " . date('d-m-Y',$datacc);
+
                     $datacc = date('Y-m-d', strtotime($datacc . '+30 days'));
 
                 }
+
+                //logs per action CHECK_IN_AUTO_PMS_OLD
+                Log::wLog($msglog);
+                $plog->sendLog(array("app"=>"BSIDE","content"=>$msg,"action"=>"CHECK_IN_AUTO_PMS_OLD"));
 
                 //genera_tabella_accrediti
 
@@ -316,11 +364,16 @@ if (isset($_POST["button"])) {
             if(!$mail->Send())
             {
                 $messaggio_interno .= $mail->ErrorInfo."<BR>";
+                $smail = $logmail->sendErrorEmail("Impossibile inviare: " .$messaggio_interno);
             }
             else
             {
                 $messaggio_interno .= "Inviata email informativa.<BR>";
             }
+
+            //.log action: CHECK_IN_AUTO_EMAIL
+            Log::wLog($messaggio_interno);
+            $plog->sendLog(array("app"=>"BSIDE","content"=>$msg,"action"=>"CHECK_IN_AUTO_EMAIL"));
 
             //mostra messaggio interno
 

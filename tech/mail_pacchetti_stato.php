@@ -3,6 +3,9 @@
 
 include 'connect.php';
 require 'class/PHPMailerAutoload.php';
+require_once  $_SERVER['DOCUMENT_ROOT']."/areaclienti/classes/Log.php";
+require_once  $_SERVER['DOCUMENT_ROOT']."/areaclienti/classes/PickLog.php";
+require_once  $_SERVER['DOCUMENT_ROOT']."/areaclienti/classes/Mail.php";
 
 $now = (new DateTime("Europe/Rome"))->format('Y-m-d');
 $output = $now. ": START>----------------------------------------------------------------------";
@@ -49,7 +52,7 @@ $corpodeltesto = "<table style=\"margin: 0pt auto; border: 3px solid #015d6e; wi
         . "     <br /> Cordiali saluti,<br /><br /><B><font color=\"#ff6600\">Lo Staff</B></font><br /><br /> <img style=\"height: 30px;\" src=\"http://www.pickcenter.it/wp-content/uploads/2017/02/logoBside.jpg\"/>"
         . "     </TD></table> ";
 $corpodeltestotxt = "Il messaggio &egrave; formattato in HTML, attivare tale modalit&agrave;.";
-
+$plog = new PickLog();
 $mail = new PHPMailer();
 $mail->IsSMTP();
 $mail->CharSet="UTF-8";
@@ -77,7 +80,7 @@ $output .= $oggetto . PHP_EOL . $corpodeltesto . PHP_EOL;
 
 $output .= "------------------------------------------------------" . PHP_EOL;
 
-// mando le email a tutti i normali
+// mando le email a tutti i normali in scadenza
 
 $sql_normali = "SELECT * FROM acs_pacchetti WHERE cestinato != '1' && NOT (((data_fine_pacchetto - curdate())/(data_fine_pacchetto-data_inizio_pacchetto))< 0.2 || ore_utilizzate / (ore_totali_pacchetto + delta_ore) > 0.8)";
 $result = $conn->query($sql_normali); 
@@ -137,7 +140,12 @@ $mail->IsHTML(true);
 $mail->Subject = $oggetto;
 $mail->Body    = $corpodeltesto;
 $mail->AltBody = $corpodeltestotxt;
-$mail->send();
+
+
+($mail->send()) ? $msg = "Inviata correttamente email di informazioni contrattuali a: " . $destinatario : $msg = "Impossibile inviare email di informazioni contrattuali a: " . $destinatario . ". Errore: " . $mail->ErrorInfo;
+
+Log::wLog($msg);
+$plog->sendLog(array("app"=>"BSIDE","action"=>"STATO_CONTRATTO","content"=>$msg));
 
 $output .= $oggetto . PHP_EOL . $corpodeltesto . PHP_EOL;
 
@@ -204,8 +212,11 @@ $mail->IsHTML(true);
 $mail->Subject = $oggetto;
 $mail->Body    = $testo_email;
 $mail->AltBody = $corpodeltestotxt;
-$mail->send();
 
+($mail->send()) ? $msg = "Inviata correttamente email di stato dei contratti." : $msg = "Impossibile inviare email di stato dei contratti. Errore: " . $mail->ErrorInfo;
+
+Log::wLog($msg);
+$plog->sendLog(array("app"=>"BSIDE","action"=>"STATO_CONTRATTI","content"=>$msg));
 
 $output .= $oggetto . PHP_EOL . $testo_email . PHP_EOL . "------------------------------------------------------------>END";
 

@@ -2,10 +2,13 @@
 
 include 'connect_prod.php';
 require 'class/PHPMailerAutoload.php';
+require_once  $_SERVER['DOCUMENT_ROOT']."/areaclienti/classes/Log.php";
+require_once  $_SERVER['DOCUMENT_ROOT']."/areaclienti/classes/PickLog.php";
+require_once  $_SERVER['DOCUMENT_ROOT']."/areaclienti/classes/Mail.php";
 
 $now = (new DateTime("Europe/Rome"))->format('Y-m-d');
 $output = $now. ": START>----------------------------------------------";
-
+$plog = new PickLog();
 
 $oggetto = "PACCHETTI IN SCADENZA";
 
@@ -75,14 +78,17 @@ $mail->IsHTML(true);
 $mail->Subject = $oggetto;
 $mail->Body    = $testo_email;
 $mail->AltBody = $corpodeltestotxt;
-$mail->send();
+
+($mail->send()) ? $msg = "Inviata la mail interna con lo stato dei contratti BSide in scadenza" : $msg = "Impossibile inviare la mail interna con lo stato dei contratti BSide in scadenza. Errore: " . $mail->ErrorInfo;
+Log::wLog($msg);
+$plog->sendLog(array("app"=>"BSIDE","action"=>"NOTIFICA_CONTRATTO_SCADENZA","content"=>$msg));
 
 $output .= $oggetto . PHP_EOL . $testo_email . "---------------------------------------------------";
 
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-//pacchetti in scadenza per data
+//pacchetti scaduti
 
 $sql_scaduti = "SELECT *, book_account.id, book_account.email FROM pacchetti_scadenza, book_account WHERE ((data_fine > CURDATE() and restante = 0) OR data_fine < curdate()) AND id_account = book_account.id  ORDER BY data_fine ASC";
 $resultscaduti = $conn_prod_booking->query($sql_scaduti); 
@@ -131,8 +137,10 @@ $mail->IsHTML(true);
 $mail->Subject = $oggetto;
 $mail->Body    = $testo_email;
 $mail->AltBody = $corpodeltestotxt;
-$mail->send();
 
+    ($mail->send()) ? $msg = "Inviata email contratti scaduti." : $msg = "Impossibile inviare email contratti scaduti. Errore: " . $mail->ErrorInfo;
+    Log::wLog($msg);
+    $plog->sendLog(array("app"=>"BSIDE","action"=>"NOTIFICA_CONTRATTI_SCADUTI","content"=>$msg));
 
 $output .= $oggetto . $testo_email . PHP_EOL;
 
