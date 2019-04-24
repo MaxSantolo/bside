@@ -117,7 +117,7 @@ $mail = new PHPMailer();
 $mail->IsSMTP();
 $mail->CharSet="UTF-8";
 $mail->SMTPSecure = 'tls';
-$mail->Host = 'mail.gmail.com';
+$mail->Host = 'smtp.gmail.com';
 $mail->Port = 587;
 $mail->Username = 'info@pickcenter.com';
 $mail->Password = 'fm105pick';
