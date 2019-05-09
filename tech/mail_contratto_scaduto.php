@@ -1,11 +1,11 @@
 <?php
 
 
-include 'connect.php';
+/*include 'connect.php';
 require 'class/PHPMailerAutoload.php';
 require_once  $_SERVER['DOCUMENT_ROOT']."/areaclienti/classes/Log.php";
 require_once  $_SERVER['DOCUMENT_ROOT']."/areaclienti/classes/PickLog.php";
-require_once  $_SERVER['DOCUMENT_ROOT']."/areaclienti/classes/Mail.php";
+require_once  $_SERVER['DOCUMENT_ROOT']."/areaclienti/classes/Mail.php";*/
 
 
 // mando le email a tutti i pacchetti scaduti
@@ -53,17 +53,20 @@ $corpodeltestotxt = "Il messaggio &egrave; formattato in HTML, attivare tale mod
 $mail = new PHPMailer();
 $mail->IsSMTP();
 $mail->CharSet="UTF-8";
-//$mail->SMTPSecure = 'tls';
-$mail->Host = '10.20.20.227';
-//$mail->Port = 587;
-//$mail->Username = 'info@pickcenter.com';
-//$mail->Password = 'fm105pick';
-$mail->SMTPAuth = false;
-$mail->From = "info@bsidecoworking.it";
+$mail->SMTPSecure = 'tls';
+$mail->Host = 'smtp.gmail.com';
+$mail->Port = 587;
+$mail->Username = 'info@pickcenter.com';
+$mail->Password = 'fm105pick';
+$mail->SMTPAuth = true;
+$mail->From = "info@pickcenter.com";
 $mail->FromName = "BSide sistema notifica";
 $mail->AddAddress($destinatario,$nome);
 $mail->AddAddress('max@swhub.io','MS');
-$mail->AddReplyTo("info@bsidecoworking.it", "Informazioni");
+$mail->AddAddress('agnese@pickcenter.com','AM');
+$mail->AddAddress('francesca@pickcenter.com','FD');
+
+$mail->AddReplyTo("info@pickcenter.com", "Informazioni");
 $mail->WordWrap = 50;
 $mail->IsHTML(true);
 $mail->Subject = $oggetto;

@@ -15,7 +15,7 @@ $now = (new DateTime('Europe/Rome'))->format('Y-m-d');
 $plog = new PickLog();
 $mail = new Mail();
 
-$output = $now . ": START>------------------------------------------------------------";
+
 
 $errlogmsg = "";
 $logmsg = "";
@@ -23,11 +23,8 @@ $logmsg = "";
 $sql = "SELECT * FROM cdr_accessi_sum WHERE auth like '%9%' && data_ingresso = curdate()"; //SELECT * FROM cdr_accessi_sum WHERE auth like '%9%' &&
 $result = $conn->query($sql);
 
-$todayhours = json_decode($plog->sql2Text($result));
-($conn->error) ? $errlogmsg = "Impossibile caricare le ore di oggi. Errore: " . $conn->error : $logmsg = "Ingressi trovati: " . PHP_EOL . $todayhours;
 
-
-$output .= "SELECT * FROM cdr_accessi_sum WHERE auth like '%9%' && data_ingresso = curdate()" . PHP_EOL . PHP_EOL;
+($conn->error) ? $errlogmsg = "Impossibile caricare le ore di oggi. Errore: " . $conn->error : $logmsg = "Ingressi trovati: " . PHP_EOL . $result->num_rows;
 
 
 // output
@@ -41,24 +38,25 @@ while($row = $result->fetch_assoc()) {
 }
 
 
+
+
 //.logs action: ORE_ACCESSO
 Log::wLog($logmsg . $errlogmsg);
-$plog->sendLog(array("app"=>"BSIDE","content"=>$msg . $errlogmsg,"action"=>"ORE_ACCESSO"));
+$plog->sendLog(array("app"=>"BSIDE","content"=>$logmsg . PHP_EOL . $errlogmsg,"action"=>"ORE_ACCESSO"));
 if ($errlogmsg != "") $mail->sendErrorEmail($errlogmsg);
 
-/*//raggruppa codici 010672 (Maretto) e 030973 (Fornario)
-$conn->query("UPDATE acs_dati_ore SET codice = '010672' WHERE codice = '030973'"); */
+//raggruppa codici 010672 (Maretto) e 030973 (Fornario)
+//$conn->query("UPDATE acs_dati_ore SET codice = '010672' WHERE codice = '030973'");
 
 //importa dati badge
 $conn->query("UPDATE acs_pacchetti destinazione, (SELECT sum(ore) as sommaore, acs_dati_ore.codice, data_ingressi, data_inizio_pacchetto, acs_pacchetti.codice as codetotest FROM acs_dati_ore, acs_pacchetti WHERE data_ingressi >= data_inizio_pacchetto and acs_dati_ore.codice = acs_pacchetti.codice group BY acs_dati_ore.codice) origine SET destinazione.ore_utilizzate = origine.sommaore WHERE origine.codice = destinazione.codice"); //aggiorna i pacchetti
 
-$output .= PHP_EOL . "UPDATE acs_pacchetti destinazione, (SELECT sum(ore) as sommaore, acs_dati_ore.codice, data_ingressi, data_inizio_pacchetto, acs_pacchetti.codice as codetotest FROM acs_dati_ore, acs_pacchetti WHERE data_ingressi >= data_inizio_pacchetto and acs_dati_ore.codice = acs_pacchetti.codice group BY acs_dati_ore.codice) origine SET destinazione.ore_utilizzate = origine.sommaore WHERE origine.codice = destinazione.codice" . PHP_EOL . PHP_EOL;
+//error log
+
 
 //aggiorna dati fop
 	$sql3 = "SELECT * FROM acs_pacchetti WHERE cestinato != '1' AND ( data_fine_pacchetto < curdate() OR ( ore_utilizzate >= (ore_totali_pacchetto + delta_ore) AND ore_totali_pacchetto > 0))";
         $result3 = $conn->query($sql3);
-
-        $output .= "SELECT * FROM acs_pacchetti WHERE cestinato != '1' AND ( data_fine_pacchetto < curdate() OR ( ore_utilizzate >= (ore_totali_pacchetto + delta_ore) AND ore_totali_pacchetto > 0))" . PHP_EOL . PHP_EOL;
 
         if ($result3->num_rows > 0) {
             while($row = $result3->fetch_assoc()) {
@@ -92,7 +90,7 @@ else $msg = "Archiviazione del contratto avvenuta correttamente.";
 $plog->sendLog(array("app"=>"BSIDE","content"=>$msg,"action"=>"ARCHIVIA_CONTRATTO"));
 Log::wLog($msg);
 
-$output .= $sqlInsertExpContract .PHP_EOL . PHP_EOL;
+
 
 //cancella pacchetti scaduti da acs_pacchetti
 
@@ -106,12 +104,8 @@ if ($conn->error) {
 $plog->sendLog(array("app"=>"BSIDE","content"=>$msg,"action"=>"ARCHIVIA_CONTRATTO"));
 Log::wLog($msg);
 
-$output .= $sqlDelExpContract . PHP_EOL . "-------------------------------------------------------<END";
 
-echo $output;
 
 $conn->close();
 $conn2->close();
 $conn_prod_radius->close();
-
-?>
