@@ -1,0 +1,45 @@
+ Il volume nell'unit… J Š www
+ Numero di serie del volume: F818-73BB
+
+ Directory di J:\
+
+24/05/2019  11:32    <DIR>          .
+15/04/2019  16:23    <DIR>          ..
+03/05/2018  09:54               237 benvenuto.php
+03/04/2019  15:18    <DIR>          calendario
+21/03/2017  18:23            11.002 calendario_generale.php
+09/05/2017  12:23               851 cancella.php
+14/03/2017  10:09               379 canc_pacch_archiv.php
+01/03/2017  12:45               365 canc_prenotazione.php
+10/03/2017  13:42               361 canc_ut_ac.php
+15/04/2019  17:17    <DIR>          classes
+09/03/2017  16:26             8.923 crea_calendario.php
+03/04/2019  15:19    <DIR>          crm
+26/07/2017  16:21             3.779 crm_elenco_mailchimp.php
+24/05/2017  14:33             5.183 crm_ins_evento.php
+03/04/2019  17:11            13.528 crm_lead_dettagli.php
+26/07/2017  16:31             5.676 crm_lead_elenco.php
+16/03/2017  13:38               309 dati_calendario.php
+05/04/2017  16:42               394 dati_calendario_intranet.php
+11/04/2017  16:17             7.757 dati_contratti_intranet.php
+24/05/2019  11:32                94 dirlist.txt
+12/06/2017  09:07             9.412 edit_pacchetto.php
+23/11/2018  16:54            14.014 elenco_pacchetti_scaduti.php
+03/01/2018  15:52             6.792 elenco_utenti_ac.php
+19/04/2017  16:46             3.136 index.php
+16/04/2019  13:25            21.681 ins_pacchetto.php
+11/09/2018  08:44             7.607 ins_prenotazione.php
+30/05/2018  12:39             8.088 ins_prenotazione_admin.php
+22/02/2017  17:24               107 logout.php
+15/03/2017  15:54             4.458 mail_scaduto.php
+03/04/2019  15:19    <DIR>          menu
+03/11/2017  10:03             6.939 mod_pacchetto.php
+20/03/2017  17:28             7.046 mod_prenotazione.php
+13/03/2017  17:07             4.806 mod_utente.php
+15/03/2017  17:11             5.614 ric_pacchetti.php
+07/03/2017  16:05             2.356 session.php
+04/04/2017  15:13             3.762 tabella_menu_admin.php
+14/03/2017  12:11             2.751 tabella_menu_utente.php
+20/03/2017  13:52               548 test.php
+              32 File        167.955 byte
+               6 Directory  46.297.604.096 byte disponibili
